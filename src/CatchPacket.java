@@ -247,7 +247,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 					if(data.length==0){
 						sb_analysis.append("此为不带数据的应答报文！\n");
 					}else{
-						if(tPacket.src_port==80){                 //接受HTTP回应
+						if(tPacket.src_port == 80){                 //接受HTTP回应
 							String str = null;
 							try {
 								String str1 = new String(data,"UTF-8");
