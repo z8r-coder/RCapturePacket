@@ -8,12 +8,14 @@ public class main{
 	   CatchPacket cp = new CatchPacket();
 	   cp.getDevices();
 	   cp.desNetworkInterface();
-	   HashMap<NetworkInterface, StringBuilder> hm = cp.getNetWorkDes();
-	   for(NetworkInterface sb : hm.keySet()){
-		   System.out.println(hm.get(sb).toString());
-	   }
-	   cp.getCap(cp.device, true, "");
+//	   HashMap<NetworkInterface, StringBuilder> hm = cp.getNetWorkDes();
+//	   for(NetworkInterface sb : hm.keySet()){
+//		   System.out.println(hm.get(sb).toString());
+//	   }
+	   cp.getCap(cp.devices[0], true, "");
+
 	   Thread thread = new Thread(cp);
+	   CatchPacket.sb_analysis.delete(0, CatchPacket.sb_analysis.length());
 	   thread.start();
    }
 }

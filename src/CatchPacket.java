@@ -23,6 +23,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 	public JpcapCaptor jCaptor;
 	public LinkedList<Packet> packets = new LinkedList();
 	public HashMap<NetworkInterface, StringBuilder> hm_inface_sb = new HashMap<>();
+	static StringBuilder sb_analysis = new StringBuilder();
 	
 	//获得网络接口
 	public NetworkInterface[] getDevices() {
@@ -88,6 +89,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 	//设置抓包模式开始抓包
 	public void beginCatch() {
 		jCaptor.processPacket(1, this);
+		//jCaptor.loopPacket(-1, new CatchPacket());
 	}
 	
 	//结束抓包
@@ -135,13 +137,13 @@ public class CatchPacket implements PacketReceiver,Runnable{
 		}
 	}
 	public void analysis(Packet packet) {
-		StringBuilder sb_analysis = new StringBuilder();
+		sb_analysis = new StringBuilder();
 		sb_analysis.append("Captured Length:"+packet.caplen+" byte\n");
-		sb_analysis.append("Length of this Packet:"+packet.len+" byte/n");
-		sb_analysis.append("Header:"+packet.header+"/n");
-		sb_analysis.append("Length of Header:"+packet.header.length+" byte/n");
-		sb_analysis.append("Data:"+packet.data+"/n");
-		sb_analysis.append("Length of Data:"+packet.data.length+" byte/n");
+		sb_analysis.append("Length of this Packet:"+packet.len+" byte\n");
+		sb_analysis.append("Header:"+packet.header+"\n");
+		sb_analysis.append("Length of Header:"+packet.header.length+" byte\n");
+		sb_analysis.append("Data:"+packet.data+"\n");
+		sb_analysis.append("Length of Data:"+packet.data.length+" byte\n");
 		
 		DatalinkPacket dpacket = packet.datalink;
 		if (dpacket instanceof EthernetPacket) {//以太网帧
@@ -154,7 +156,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 				if (count < ePacket.src_mac.length) {
 					sb_analysis.append(Integer.toHexString(b & 0xff)+" : ");
 				}else {
-					sb_analysis.append(Integer.toHexString(b & 0xff) + "/n");
+					sb_analysis.append(Integer.toHexString(b & 0xff) + "\n");
 				}
 			}
 			sb_analysis.append("dst_mac:");
@@ -171,79 +173,79 @@ public class CatchPacket implements PacketReceiver,Runnable{
 			sb_analysis.append(dpacket + "\n");
 		}
 		if(packet instanceof ARPPacket){               //分析ARP协议
-			sb_analysis.append("---ARP---/n");
+			sb_analysis.append("---ARP---\n");
 			ARPPacket aPacket = (ARPPacket)packet;
-			sb_analysis.append("硬件类型："+aPacket.hardtype+"/n");
-			sb_analysis.append("协议类型："+aPacket.prototype+"/n");
-			sb_analysis.append("硬件地址长度："+aPacket.hlen+"/n");
-			sb_analysis.append("协议地址长度："+aPacket.plen+"/n");
-			sb_analysis.append("Operation："+aPacket.operation+"/n");
-			sb_analysis.append("发送者硬件地址："+aPacket.sender_hardaddr+"/n");
-			sb_analysis.append("发送者协议地址："+aPacket.sender_protoaddr+"/n");
-			sb_analysis.append("目标硬件地址："+aPacket.target_hardaddr+"/n");
-			sb_analysis.append("目标协议地址："+aPacket.target_protoaddr+"/n");
-			sb_analysis.append("------------------/n");
+			sb_analysis.append("硬件类型："+aPacket.hardtype+"\n");
+			sb_analysis.append("协议类型："+aPacket.prototype+"\n");
+			sb_analysis.append("硬件地址长度："+aPacket.hlen+"\n");
+			sb_analysis.append("协议地址长度："+aPacket.plen+"\n");
+			sb_analysis.append("Operation："+aPacket.operation+"\n");
+			sb_analysis.append("发送者硬件地址："+aPacket.sender_hardaddr+"\n");
+			sb_analysis.append("发送者协议地址："+aPacket.sender_protoaddr+"\n");
+			sb_analysis.append("目标硬件地址："+aPacket.target_hardaddr+"\n");
+			sb_analysis.append("目标协议地址："+aPacket.target_protoaddr+"\n");
+			sb_analysis.append("------------------\n");
 		}
 		if(packet instanceof ICMPPacket){          //分析ICMP协议
-			sb_analysis.append("---ICMP---/n");        
+			sb_analysis.append("---ICMP---\n");        
 			ICMPPacket iPacket = (ICMPPacket)packet;
-			sb_analysis.append("ICMP_TYPE:"+iPacket.type+"/n");
-			sb_analysis.append("由于ICMP格式种类繁多，故省去不分析/n");
-			sb_analysis.append("------------------/n");
+			sb_analysis.append("ICMP_TYPE:"+iPacket.type+"\n");
+			sb_analysis.append("由于ICMP格式种类繁多，故省去不分析\n");
+			sb_analysis.append("------------------\n");
 		}
 		if(packet instanceof IPPacket){        //分析IP
 			IPPacket iPacket = (IPPacket)packet;
-			sb_analysis.append("---IP版本: "+iPacket.version+" ---/n");
+			sb_analysis.append("---IP版本: "+iPacket.version+" ---\n");
 			if(iPacket.version==4){                //分析IPv4协议
-				sb_analysis.append("Type of service:"+iPacket.rsv_tos+"/n");
-				sb_analysis.append("Priprity:"+iPacket.priority+"/n");
-				sb_analysis.append("Packet Length:"+iPacket.length+"/n");
-				sb_analysis.append("Identification:"+iPacket.ident+"/n");
-				sb_analysis.append("Don't Frag? "+iPacket.dont_frag+"/n");
-				sb_analysis.append("More Frag? "+iPacket.more_frag+"/n");
-				sb_analysis.append("Frag Offset:"+iPacket.offset+"/n");
-				sb_analysis.append("Time to Live:"+iPacket.hop_limit+"/n");
-				sb_analysis.append("Protocol:"+iPacket.protocol+"        (TCP = 6; UDP = 17)/n");
-				sb_analysis.append("Source address:"+iPacket.src_ip.toString()+"/n");
-				sb_analysis.append("Destination address:"+iPacket.dst_ip.toString()+"/n");
-				sb_analysis.append("Options:"+iPacket.option+"/n");
-				sb_analysis.append("------------------/n");
+				sb_analysis.append("Type of service:"+iPacket.rsv_tos+"\n");
+				sb_analysis.append("Priprity:"+iPacket.priority+"\n");
+				sb_analysis.append("Packet Length:"+iPacket.length+"\n");
+				sb_analysis.append("Identification:"+iPacket.ident+"\n");
+				sb_analysis.append("Don't Frag? "+iPacket.dont_frag+"\n");
+				sb_analysis.append("More Frag? "+iPacket.more_frag+"\n");
+				sb_analysis.append("Frag Offset:"+iPacket.offset+"\n");
+				sb_analysis.append("Time to Live:"+iPacket.hop_limit+"\n");
+				sb_analysis.append("Protocol:"+iPacket.protocol+"        (TCP = 6; UDP = 17)\n");
+				sb_analysis.append("Source address:"+iPacket.src_ip.toString()+"\n");
+				sb_analysis.append("Destination address:"+iPacket.dst_ip.toString()+"\n");
+				sb_analysis.append("Options:"+iPacket.option+"\n");
+				sb_analysis.append("------------------\n");
 			}
 			if(iPacket instanceof UDPPacket){      //分析UDP协议
-				sb_analysis.append("---UDP---/n");
+				sb_analysis.append("---UDP---\n");
 				UDPPacket uPacket = (UDPPacket)iPacket;
-				sb_analysis.append("Source Port:"+uPacket.src_port+"/n");
-				sb_analysis.append("Destination Port:"+uPacket.dst_port+"/n");
-				sb_analysis.append("Length:"+uPacket.length+"/n");
-				sb_analysis.append("------------------/n");
+				sb_analysis.append("Source Port:"+uPacket.src_port+"\n");
+				sb_analysis.append("Destination Port:"+uPacket.dst_port+"\n");
+				sb_analysis.append("Length:"+uPacket.length+"\n");
+				sb_analysis.append("------------------\n");
 				if(uPacket.src_port==53||uPacket.dst_port==53){  //分析DNS协议
-					sb_analysis.append("---DNS---/n");
-					sb_analysis.append("此包已抓获，分析略.../n");
-					sb_analysis.append("------------------/n");
+					sb_analysis.append("---DNS---\n");
+					sb_analysis.append("此包已抓获，分析略...\n");
+					sb_analysis.append("------------------\n");
 				}
 			}
 			if(iPacket instanceof TCPPacket){      //分析TCP协议
-				sb_analysis.append("---TCP---/n");
+				sb_analysis.append("---TCP---\n");
 				TCPPacket tPacket = (TCPPacket)iPacket;
-				sb_analysis.append("Source Port:"+tPacket.src_port+"/n");
-				sb_analysis.append("Destination Port:"+tPacket.dst_port+"/n");
-				sb_analysis.append("Sequence Number:"+tPacket.sequence+"/n");
-				sb_analysis.append("Acknowledge Number:"+tPacket.ack_num+"/n");
-				sb_analysis.append("URG:"+tPacket.urg+"/n");
-				sb_analysis.append("ACK:"+tPacket.ack+"/n");
-				sb_analysis.append("PSH:"+tPacket.psh+"/n");
-				sb_analysis.append("RST:"+tPacket.rst+"/n");
-				sb_analysis.append("SYN:"+tPacket.syn+"/n");
-				sb_analysis.append("FIN:"+tPacket.fin+"/n");
-				sb_analysis.append("Window Size:"+tPacket.window+"/n");
-				sb_analysis.append("Urgent Pointer:"+tPacket.urgent_pointer+"/n");
-				sb_analysis.append("Option:"+tPacket.option+"/n");
-				sb_analysis.append("------------------/n");
+				sb_analysis.append("Source Port:"+tPacket.src_port+"\n");
+				sb_analysis.append("Destination Port:"+tPacket.dst_port+"\n");
+				sb_analysis.append("Sequence Number:"+tPacket.sequence+"\n");
+				sb_analysis.append("Acknowledge Number:"+tPacket.ack_num+"\n");
+				sb_analysis.append("URG:"+tPacket.urg+"\n");
+				sb_analysis.append("ACK:"+tPacket.ack+"\n");
+				sb_analysis.append("PSH:"+tPacket.psh+"\n");
+				sb_analysis.append("RST:"+tPacket.rst+"\n");
+				sb_analysis.append("SYN:"+tPacket.syn+"\n");
+				sb_analysis.append("FIN:"+tPacket.fin+"\n");
+				sb_analysis.append("Window Size:"+tPacket.window+"\n");
+				sb_analysis.append("Urgent Pointer:"+tPacket.urgent_pointer+"\n");
+				sb_analysis.append("Option:"+tPacket.option+"\n");
+				sb_analysis.append("------------------\n");
 				if(tPacket.src_port==80 || tPacket.dst_port==80){     //分析HTTP协议
-					sb_analysis.append("---HTTP---/n");
+					sb_analysis.append("---HTTP---\n");
 					byte[] data = tPacket.data;
 					if(data.length==0){
-						sb_analysis.append("此为不带数据的应答报文！/n");
+						sb_analysis.append("此为不带数据的应答报文！\n");
 					}else{
 						if(tPacket.src_port==80){                 //接受HTTP回应
 							String str = null;
@@ -265,7 +267,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 									}
 								}
 
-								sb_analysis.append(str+"/n");
+								sb_analysis.append(str+"\n");
 							} catch (UnsupportedEncodingException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -282,9 +284,9 @@ public class CatchPacket implements PacketReceiver,Runnable{
 					}
 				}
 			}
-			sb_analysis.append("/n");
-			System.out.println(sb_analysis);
 		}
+		sb_analysis.append("\n");
+		System.out.println(sb_analysis);
 	}
 
 	public HashMap<NetworkInterface, StringBuilder> getNetWorkDes() {
@@ -295,9 +297,8 @@ public class CatchPacket implements PacketReceiver,Runnable{
 		// TODO Auto-generated method stub
 		while(true){
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(5);
 				beginCatch();
-				//System.out.println(111);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -307,6 +308,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 	@Override
 	public void receivePacket(Packet packet) {
 		// TODO Auto-generated method stub
+		System.out.println(packet);
 		packets.add(packet);
 		analysis(packet);
 	}
