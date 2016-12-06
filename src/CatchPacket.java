@@ -3,6 +3,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Vector;
+
 import javax.swing.JOptionPane;
 import jpcap.JpcapCaptor;
 import jpcap.JpcapWriter;
@@ -23,6 +25,7 @@ public class CatchPacket implements PacketReceiver,Runnable{
 	public JpcapCaptor jCaptor;
 	public LinkedList<Packet> packets = new LinkedList();
 	public HashMap<NetworkInterface, StringBuilder> hm_inface_sb = new HashMap<>();
+	public LinkedList<PacketAtrr> vc_patrr = new LinkedList<>();
 	static StringBuilder sb_analysis = new StringBuilder();
 	
 	//获得网络接口
@@ -144,7 +147,6 @@ public class CatchPacket implements PacketReceiver,Runnable{
 		sb_analysis.append("Length of Header:"+packet.header.length+" byte\n");
 		sb_analysis.append("Data:"+packet.data+"\n");
 		sb_analysis.append("Length of Data:"+packet.data.length+" byte\n");
-		
 		DatalinkPacket dpacket = packet.datalink;
 		if (dpacket instanceof EthernetPacket) {//以太网帧
 			EthernetPacket ePacket = (EthernetPacket)dpacket;
@@ -185,6 +187,9 @@ public class CatchPacket implements PacketReceiver,Runnable{
 			sb_analysis.append("目标硬件地址："+aPacket.target_hardaddr+"\n");
 			sb_analysis.append("目标协议地址："+aPacket.target_protoaddr+"\n");
 			sb_analysis.append("------------------\n");
+			PacketAtrr pa = new PacketAtrr(aPacket.plen, aPacket.sender_protoaddr
+					, aPacket.target_protoaddr, "ARP");
+			vc_patrr.add(pa);
 		}
 		if(packet instanceof ICMPPacket){          //分析ICMP协议
 			sb_analysis.append("---ICMP---\n");        
