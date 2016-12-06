@@ -2,10 +2,10 @@
 //∞¸ Ù–‘
 public class PacketAtrr {
 	private int length;
-	private byte[] Sourceaddr;
-	private byte[] DestinationAddr;
+	private String Sourceaddr;
+	private String DestinationAddr;
 	private String Protocol;
-	public PacketAtrr(int length,byte[] sender_protoaddr,byte[] target_protoaddr,String Protocol) {
+	public PacketAtrr(int length,String sender_protoaddr,String target_protoaddr,String Protocol) {
 		// TODO Auto-generated constructor stub
 		this.Sourceaddr = sender_protoaddr;
 		this.DestinationAddr = target_protoaddr;
@@ -13,18 +13,18 @@ public class PacketAtrr {
 		this.Protocol = Protocol;
 	}
 	
-	public byte[] getSourceaddr() {
+	public String getSourceaddr() {
 		return Sourceaddr;
 	}
 	
-	public void setSourceaddr(byte[] sourceaddr) {
+	public void setSourceaddr(String sourceaddr) {
 		this.Sourceaddr = sourceaddr;
 	}
 	
-	public byte[] getDestinationAddr() {
+	public String getDestinationAddr() {
 		return DestinationAddr;
 	}
-	public void setDestinationAddr(byte[] destinationAddr) {
+	public void setDestinationAddr(String destinationAddr) {
 		DestinationAddr = destinationAddr;
 	}
 	

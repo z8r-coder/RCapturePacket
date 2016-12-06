@@ -19,7 +19,7 @@ import jpcap.packet.Packet;
 import jpcap.packet.TCPPacket;
 import jpcap.packet.UDPPacket;
 
-public class CatchPacket implements PacketReceiver,Runnable{
+public class CatchPacket implements PacketReceiver{
 	public NetworkInterface[] devices;
 	public NetworkInterface device;//该网卡进行监听
 	public JpcapCaptor jCaptor;
@@ -187,8 +187,8 @@ public class CatchPacket implements PacketReceiver,Runnable{
 			sb_analysis.append("目标硬件地址："+aPacket.target_hardaddr+"\n");
 			sb_analysis.append("目标协议地址："+aPacket.target_protoaddr+"\n");
 			sb_analysis.append("------------------\n");
-			PacketAtrr pa = new PacketAtrr(aPacket.plen, aPacket.sender_protoaddr
-					, aPacket.target_protoaddr, "ARP");
+			PacketAtrr pa = new PacketAtrr(aPacket.len, aPacket.sender_protoaddr.toString()
+					, aPacket.target_protoaddr.toString(), "ARP");
 			vc_patrr.add(pa);
 		}
 		if(packet instanceof ICMPPacket){          //分析ICMP协议
@@ -197,6 +197,9 @@ public class CatchPacket implements PacketReceiver,Runnable{
 			sb_analysis.append("ICMP_TYPE:"+iPacket.type+"\n");
 			sb_analysis.append("由于ICMP格式种类繁多，故省去不分析\n");
 			sb_analysis.append("------------------\n");
+			PacketAtrr pa = new PacketAtrr(iPacket.length, iPacket.src_ip.toString()
+					, iPacket.dst_ip.toString(), "ICMP");
+			vc_patrr.add(pa);
 		}
 		if(packet instanceof IPPacket){        //分析IP
 			IPPacket iPacket = (IPPacket)packet;
@@ -215,6 +218,10 @@ public class CatchPacket implements PacketReceiver,Runnable{
 				sb_analysis.append("Destination address:"+iPacket.dst_ip.toString()+"\n");
 				sb_analysis.append("Options:"+iPacket.option+"\n");
 				sb_analysis.append("------------------\n");
+				PacketAtrr pa = new PacketAtrr(iPacket.length, iPacket.src_ip.toString()
+						, iPacket.dst_ip.toString(), "IPv4");
+				vc_patrr.add(pa);
+				
 			}
 			if(iPacket instanceof UDPPacket){      //分析UDP协议
 				sb_analysis.append("---UDP---\n");
@@ -227,7 +234,13 @@ public class CatchPacket implements PacketReceiver,Runnable{
 					sb_analysis.append("---DNS---\n");
 					sb_analysis.append("此包已抓获，分析略...\n");
 					sb_analysis.append("------------------\n");
+					PacketAtrr pa = new PacketAtrr(uPacket.length, uPacket.src_ip.toString()
+							, uPacket.dst_ip.toString(), "DNS");
+					vc_patrr.add(pa);
 				}
+				PacketAtrr pa = new PacketAtrr(uPacket.length, uPacket.src_ip.toString()
+						, uPacket.dst_ip.toString(), "UDP");
+				vc_patrr.add(pa);
 			}
 			if(iPacket instanceof TCPPacket){      //分析TCP协议
 				sb_analysis.append("---TCP---\n");
@@ -246,8 +259,14 @@ public class CatchPacket implements PacketReceiver,Runnable{
 				sb_analysis.append("Urgent Pointer:"+tPacket.urgent_pointer+"\n");
 				sb_analysis.append("Option:"+tPacket.option+"\n");
 				sb_analysis.append("------------------\n");
+				PacketAtrr pa = new PacketAtrr(tPacket.length, tPacket.src_ip.toString()
+						, tPacket.dst_ip.toString(), "TCP");
+				vc_patrr.add(pa);
 				if(tPacket.src_port==80 || tPacket.dst_port==80){     //分析HTTP协议
 					sb_analysis.append("---HTTP---\n");
+					PacketAtrr p = new PacketAtrr(tPacket.length, tPacket.src_ip.toString()
+							, tPacket.dst_ip.toString(), "HTTP");
+					vc_patrr.add(p);
 					byte[] data = tPacket.data;
 					if(data.length==0){
 						sb_analysis.append("此为不带数据的应答报文！\n");
@@ -297,25 +316,11 @@ public class CatchPacket implements PacketReceiver,Runnable{
 	public HashMap<NetworkInterface, StringBuilder> getNetWorkDes() {
 		return hm_inface_sb;
 	}
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		while(true){
-			try {
-				Thread.sleep(5);
-				beginCatch();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
 
 	@Override
 	public void receivePacket(Packet packet) {
 		// TODO Auto-generated method stub
-		System.out.println(packet);
 		packets.add(packet);
 		analysis(packet);
 	}
-
 }
