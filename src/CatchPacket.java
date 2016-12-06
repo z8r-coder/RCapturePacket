@@ -35,15 +35,11 @@ public class CatchPacket implements PacketReceiver{
 	}
 	//获得网卡list描述
 	public void desNetworkInterface() {
+		device = devices[0];//默认网口为1号
 		for(int i = 0; i < devices.length; i++){
 			StringBuilder sb_network = new StringBuilder(); 
 			sb_network.append("接口" + (i + 1) + ":\n");
 			sb_network.append("接口名称:" + devices[i].name + "\n");
-
-
-			if (!(devices[i].name.contains("GenericDialupAdapter"))) {
-				device = devices[i];
-			}
 			
 			sb_network.append("网络接口描述:" + devices[i].description + "\n");
 			sb_network.append("数据链路层名称:" + devices[i].datalink_name + "\n");

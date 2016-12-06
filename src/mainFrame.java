@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.NetworkInterface;
 import java.util.HashMap;
+import java.util.Vector;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -28,12 +29,14 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 
 	JTable table;
 	String []entry = {"No.","Time","Source","Destination","Protocol","Length"};
-	private DefaultTableModel model = new DefaultTableModel(null, entry);
-	
+	private HashMap<String, DefaultTableModel> hm_str_model = new HashMap<>();
+	//当前网卡model
+	private DefaultTableModel currentModel = new DefaultTableModel(null, entry);
 	private JMenuBar menuBar;
 	private JMenu Op;
 	private JMenu selectNetWork;
 	private CatchPacket cp = new CatchPacket();
+	private Vector<NetWorkJMenuItem> vc_item = new Vector<>();
 	
 	private boolean isRun = false;
 	
@@ -62,10 +65,16 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		cp.getDevices();//初始化网卡
 		cp.desNetworkInterface();//获取网卡描述
 		//打开一个网卡接口，捕获该网卡的包
-		cp.getCap(cp.devices[0], true, "");
+		cp.getCap(cp.device, true, "");
+
+		//创建菜单
+		menuBar = new JMenuBar();
+		initOpMenu();
+		initSelectNetWork();
 		
+		currentModel = hm_str_model.get(vc_item.get(0).getText());
 		//将cell设置成不可编辑
-		table = new JTable(model){
+		table = new JTable(currentModel){
 			public boolean isCellEditable(int row,int column) {
 				return false;
 			}
@@ -74,14 +83,10 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		createTable();
 		//创建具体描述窗口
 		createDes();
-		//创建菜单
-		menuBar = new JMenuBar();
-		
 		jp.add(TablePanel);
 		jp.add(desPanel);
 		
-		initOpMenu();
-		initSelectNetWork();
+
 		setJMenuBar(menuBar);
 		setVisible(true);
 	}
@@ -91,9 +96,11 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		menuBar.add(Op);
 		JMenuItem begin = new JMenuItem("begin");
 		JMenuItem end = new JMenuItem("end");
+		JMenuItem clear = new JMenuItem("clear");
 		begin.addActionListener(this);
 		end.addActionListener(this);
-		Op.add(begin);Op.add(end);
+		clear.addActionListener(this);
+		Op.add(begin);Op.add(end);Op.add(clear);
 	}
 	public void initSelectNetWork() {
 		selectNetWork = new JMenu("NetWork");
@@ -101,14 +108,33 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		HashMap<jpcap.NetworkInterface, StringBuilder> hm = cp.getNetWorkDes();
 		for(int i = 1; i <= hm.size();i++){
 			NetWorkJMenuItem inface = new NetWorkJMenuItem("Interface:" + i);
-//			JMenuItem inface = new JMenuItem("Interface:" + i);
+			vc_item.add(inface);
+			hm_str_model.put(vc_item.get(i - 1).getText(), new DefaultTableModel(null, entry));
 			selectNetWork.add(inface);
+			inface.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					currentModel = hm_str_model.get(inface.getText());
+					for (int j = 0; j < vc_item.size(); j++) {
+						if (vc_item.get(j) != inface) {
+							vc_item.get(j).removeImage();
+						}else {
+							vc_item.get(j).addImage();
+							cp.device = cp.devices[j];
+							cp.getCap(cp.device, true, "");
+						}
+					}
+					
+				}
+			});
 		}
+		vc_item.get(0).addImage();//默认为第一个网卡
 	}
 	//捕捉包列表
 	public void createTable() {
 		TablePanel = new JPanel();
-		table.setModel(model);
+		table.setModel(currentModel);
 
 		JScrollPane scrollPane = new JScrollPane(table);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -139,16 +165,28 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		
 		long startTime = System.currentTimeMillis();
 		isRun = true;
+		DefaultTableModel temp_model = currentModel;
 		while(isRun){
 			cp.beginCatch();
-			PacketAtrr pa = cp.vc_patrr.removeFirst();
-			long endTime = System.currentTimeMillis();
-			long continueTime = endTime - startTime;
-			String[] rowData = {count + "",continueTime + "",pa.getSourceaddr()
-					,pa.getDestinationAddr(),pa.getProtocol(),pa.getLength() + ""};
-			model.addRow(rowData);
-			table.setModel(model);
-			count++;
+			//同步，防止竞态条件
+			synchronized (temp_model) {
+				if (cp.vc_patrr.size() != 0 && temp_model == currentModel) {
+					PacketAtrr pa = cp.vc_patrr.removeFirst();
+					long endTime = System.currentTimeMillis();
+					long continueTime = endTime - startTime;
+					String[] rowData = {count + "",continueTime + "",pa.getSourceaddr()
+							,pa.getDestinationAddr(),pa.getProtocol(),pa.getLength() + ""};
+					currentModel.addRow(rowData);
+					table.setModel(currentModel);
+					count++;
+				}
+				else {
+					cp.vc_patrr.clear();
+					table.setModel(currentModel);
+					temp_model = currentModel;
+					count = 0;
+				}
+			}
 		}
 	}
 
@@ -161,6 +199,10 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		}
 		else if (e.getActionCommand().equals("end")) {
 			isRun = false;
+		}
+		else if (e.getActionCommand().equals("clear")) {
+			DefaultTableModel model = new DefaultTableModel(null, entry);
+			table.setModel(model);
 		}
 	}
 }

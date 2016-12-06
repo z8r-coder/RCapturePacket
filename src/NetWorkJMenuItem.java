@@ -1,3 +1,4 @@
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 
@@ -10,6 +11,8 @@ public class NetWorkJMenuItem extends JMenuItem{
 	private JLabel jLabel_image;
 	private JLabel jLabel_text;
 	private JPanel jPanel;
+	private boolean isSelected = false;
+	
 	public NetWorkJMenuItem(String text) {
 		// TODO Auto-generated constructor stub
 		super(text);
@@ -18,8 +21,26 @@ public class NetWorkJMenuItem extends JMenuItem{
 		jLabel_image = new JLabel(image);
 		jLabel_text = new JLabel(text);
 		add(jPanel);
-		jPanel.setLayout(new GridLayout(2, 1));
+		GridBagLayout gbl = new GridBagLayout();
+		jPanel.setLayout(gbl);
 		jPanel.add(jLabel_text);
+		
+	}
+	
+	public void addImage() {
 		jPanel.add(jLabel_image);
+		isSelected = true;
+	}
+	
+	public void removeImage() {
+		jPanel.remove(jLabel_image);
+	}
+	
+	public void setIsSelected(boolean isSelected) {
+		this.isSelected = isSelected;
+	}
+	
+	public boolean getIsSelected() {
+		return isSelected;
 	}
 }
