@@ -5,6 +5,7 @@ public class PacketAtrr {
 	private String Sourceaddr;
 	private String DestinationAddr;
 	private String Protocol;
+	private StringBuilder sb;
 	public PacketAtrr(int length,String sender_protoaddr,String target_protoaddr,String Protocol) {
 		// TODO Auto-generated constructor stub
 		this.Sourceaddr = sender_protoaddr;
@@ -41,5 +42,13 @@ public class PacketAtrr {
 	}
 	public void setLength(int length) {
 		this.length = length;
+	}
+	
+	public void setDes(StringBuilder sb) {
+		this.sb = sb;
+	}
+	
+	public StringBuilder getDes() {
+		return sb;
 	}
 }

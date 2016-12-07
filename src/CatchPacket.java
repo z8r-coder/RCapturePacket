@@ -1,9 +1,7 @@
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Vector;
 
 import javax.swing.JOptionPane;
 import jpcap.JpcapCaptor;
@@ -173,28 +171,35 @@ public class CatchPacket implements PacketReceiver{
 		if(packet instanceof ARPPacket){               //分析ARP协议
 			sb_analysis.append("---ARP---\n");
 			ARPPacket aPacket = (ARPPacket)packet;
-			sb_analysis.append("硬件类型："+aPacket.hardtype+"\n");
-			sb_analysis.append("协议类型："+aPacket.prototype+"\n");
-			sb_analysis.append("硬件地址长度："+aPacket.hlen+"\n");
-			sb_analysis.append("协议地址长度："+aPacket.plen+"\n");
+			sb_analysis.append("Hardware Type："+aPacket.hardtype+"\n");
+			sb_analysis.append("Protocol Type："+aPacket.prototype+"\n");
+			sb_analysis.append("Hardware address length："+aPacket.hlen+"\n");
+			sb_analysis.append("Protocol address length："+aPacket.plen+"\n");
 			sb_analysis.append("Operation："+aPacket.operation+"\n");
-			sb_analysis.append("发送者硬件地址："+aPacket.sender_hardaddr+"\n");
-			sb_analysis.append("发送者协议地址："+aPacket.sender_protoaddr+"\n");
-			sb_analysis.append("目标硬件地址："+aPacket.target_hardaddr+"\n");
-			sb_analysis.append("目标协议地址："+aPacket.target_protoaddr+"\n");
+			sb_analysis.append("Sender hardware address:"+aPacket.sender_hardaddr+"\n");
+			sb_analysis.append("Sender protocol address:"+aPacket.sender_protoaddr+"\n");
+			sb_analysis.append("Target hardware address:"+aPacket.target_hardaddr+"\n");
+			sb_analysis.append("Target protocol address:"+aPacket.target_protoaddr+"\n");
 			sb_analysis.append("------------------\n");
 			PacketAtrr pa = new PacketAtrr(aPacket.len, aPacket.sender_protoaddr.toString()
 					, aPacket.target_protoaddr.toString(), "ARP");
+			pa.setDes(sb_analysis);
 			vc_patrr.add(pa);
 		}
 		if(packet instanceof ICMPPacket){          //分析ICMP协议
 			sb_analysis.append("---ICMP---\n");        
 			ICMPPacket iPacket = (ICMPPacket)packet;
-			sb_analysis.append("ICMP_TYPE:"+iPacket.type+"\n");
-			sb_analysis.append("由于ICMP格式种类繁多，故省去不分析\n");
+			sb_analysis.append("ICMP_Version:" + iPacket.version + "\n");
+			sb_analysis.append("ICMP_Type:"+iPacket.type+"\n");
+			sb_analysis.append("ICMP_Data:" + iPacket.data + "\n");
+			sb_analysis.append("ICMP_Alive_Time:" + iPacket.alive_time + "\n");
+			sb_analysis.append("ICMP_Source:" + iPacket.src_ip + "\n");
+			sb_analysis.append("ICMP_Destination:" + iPacket.dst_ip + "\n");
+			sb_analysis.append("ICMP_Options:" + iPacket.option + "\n");
 			sb_analysis.append("------------------\n");
 			PacketAtrr pa = new PacketAtrr(iPacket.length, iPacket.src_ip.toString()
 					, iPacket.dst_ip.toString(), "ICMP");
+			pa.setDes(sb_analysis);
 			vc_patrr.add(pa);
 		}
 		if(packet instanceof IPPacket){        //分析IP
@@ -216,35 +221,44 @@ public class CatchPacket implements PacketReceiver{
 				sb_analysis.append("------------------\n");
 				PacketAtrr pa = new PacketAtrr(iPacket.length, iPacket.src_ip.toString()
 						, iPacket.dst_ip.toString(), "IPv4");
+				pa.setDes(sb_analysis);
 				vc_patrr.add(pa);
 				
 			}
 			if(iPacket instanceof UDPPacket){      //分析UDP协议
 				sb_analysis.append("---UDP---\n");
 				UDPPacket uPacket = (UDPPacket)iPacket;
-				sb_analysis.append("Source Port:"+uPacket.src_port+"\n");
-				sb_analysis.append("Destination Port:"+uPacket.dst_port+"\n");
+				sb_analysis.append("Verson:" + uPacket.version + "\n");
+				sb_analysis.append("Source addr:" + uPacket.src_ip + "\n");
+				sb_analysis.append("Destination addr:" + uPacket.dst_ip + "\n");
 				sb_analysis.append("Length:"+uPacket.length+"\n");
+				sb_analysis.append("Option:" + uPacket.option + "\n");
+				sb_analysis.append("Time to Live:" + uPacket.hop_limit + "\n");
 				sb_analysis.append("------------------\n");
 				if(uPacket.src_port==53||uPacket.dst_port==53){  //分析DNS协议
 					sb_analysis.append("---DNS---\n");
-					sb_analysis.append("此包已抓获，分析略...\n");
+					sb_analysis.append("Source Port:"+uPacket.src_port+"\n");
+					sb_analysis.append("Destination Port:"+uPacket.dst_port+"\n");
 					sb_analysis.append("------------------\n");
 					PacketAtrr pa = new PacketAtrr(uPacket.length, uPacket.src_ip.toString()
 							, uPacket.dst_ip.toString(), "DNS");
+					pa.setDes(sb_analysis);
+					vc_patrr.add(pa);
+				}else {
+					PacketAtrr pa = new PacketAtrr(uPacket.length, uPacket.src_ip.toString()
+							, uPacket.dst_ip.toString(), "UDP");
+					pa.setDes(sb_analysis);
 					vc_patrr.add(pa);
 				}
-				PacketAtrr pa = new PacketAtrr(uPacket.length, uPacket.src_ip.toString()
-						, uPacket.dst_ip.toString(), "UDP");
-				vc_patrr.add(pa);
 			}
 			if(iPacket instanceof TCPPacket){      //分析TCP协议
 				sb_analysis.append("---TCP---\n");
 				TCPPacket tPacket = (TCPPacket)iPacket;
-				sb_analysis.append("Source Port:"+tPacket.src_port+"\n");
-				sb_analysis.append("Destination Port:"+tPacket.dst_port+"\n");
+
 				sb_analysis.append("Sequence Number:"+tPacket.sequence+"\n");
 				sb_analysis.append("Acknowledge Number:"+tPacket.ack_num+"\n");
+				sb_analysis.append("Source:" + tPacket.src_ip + "\n");
+				sb_analysis.append("Destination:" + tPacket.dst_ip + "\n");
 				sb_analysis.append("URG:"+tPacket.urg+"\n");
 				sb_analysis.append("ACK:"+tPacket.ack+"\n");
 				sb_analysis.append("PSH:"+tPacket.psh+"\n");
@@ -257,12 +271,18 @@ public class CatchPacket implements PacketReceiver{
 				sb_analysis.append("------------------\n");
 				PacketAtrr pa = new PacketAtrr(tPacket.length, tPacket.src_ip.toString()
 						, tPacket.dst_ip.toString(), "TCP");
+				pa.setDes(sb_analysis);
 				vc_patrr.add(pa);
+				
 				if(tPacket.src_port==80 || tPacket.dst_port==80){     //分析HTTP协议
 					sb_analysis.append("---HTTP---\n");
+					sb_analysis.append("Source Port:"+tPacket.src_port+"\n");
+					sb_analysis.append("Destination Port:"+tPacket.dst_port+"\n");
 					PacketAtrr p = new PacketAtrr(tPacket.length, tPacket.src_ip.toString()
 							, tPacket.dst_ip.toString(), "HTTP");
+					p.setDes(sb_analysis);
 					vc_patrr.add(p);
+					
 					byte[] data = tPacket.data;
 					if(data.length==0){
 						sb_analysis.append("此为不带数据的应答报文！\n");
@@ -306,7 +326,7 @@ public class CatchPacket implements PacketReceiver{
 			}
 		}
 		sb_analysis.append("\n");
-		System.out.println(sb_analysis);
+//		System.out.println(sb_analysis);
 	}
 
 	public HashMap<NetworkInterface, StringBuilder> getNetWorkDes() {

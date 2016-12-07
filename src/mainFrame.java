@@ -4,7 +4,8 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.NetworkInterface;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -20,15 +21,19 @@ import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
-public class mainFrame extends JFrame implements Runnable,ActionListener{
+public class mainFrame extends JFrame implements Runnable,ActionListener,MouseListener{
 	private JPanel jp;
 	private JPanel TablePanel;
 	private JPanel desPanel;
-
-	JTable table;
-	String []entry = {"No.","Time","Source","Destination","Protocol","Length"};
+	private	JTextPane jtp;
+	
+	private int count = 1;// 计数
+	private JTable table;
+	private String []entry = {"No.","Time","Source","Destination","Protocol","Length"};
 	private HashMap<String, DefaultTableModel> hm_str_model = new HashMap<>();
 	//当前网卡model
 	private DefaultTableModel currentModel = new DefaultTableModel(null, entry);
@@ -38,6 +43,8 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 	private CatchPacket cp = new CatchPacket();
 	private Vector<NetWorkJMenuItem> vc_item = new Vector<>();
 	
+	//存放pa值用於在Jtextpane中顯示具體描述，在mouseclick處回調
+	private Vector<PacketAtrr> vc_packet = new Vector<>();
 	private boolean isRun = false;
 	
 	private static mainFrame mf = new mainFrame();
@@ -79,6 +86,7 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 				return false;
 			}
 		};
+		table.addMouseListener(this);
 		//创建表格
 		createTable();
 		//创建具体描述窗口
@@ -105,10 +113,10 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 	public void initSelectNetWork() {
 		selectNetWork = new JMenu("NetWork");
 		menuBar.add(selectNetWork);
-		HashMap<jpcap.NetworkInterface, StringBuilder> hm = cp.getNetWorkDes();
-		for(int i = 1; i <= hm.size();i++){
+		//HashMap<NetworkInterface, StringBuilder> hm = cp.getNetWorkDes();
+		for(int i = 1; i <= cp.devices.length;i++){
 			NetWorkJMenuItem inface = new NetWorkJMenuItem("Interface:" + i);
-			vc_item.add(inface);
+			vc_item.add(inface);//不同接口的item
 			hm_str_model.put(vc_item.get(i - 1).getText(), new DefaultTableModel(null, entry));
 			selectNetWork.add(inface);
 			inface.addActionListener(new ActionListener() {
@@ -116,6 +124,7 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 				public void actionPerformed(ActionEvent e) {
 					// TODO Auto-generated method stub
 					currentModel = hm_str_model.get(inface.getText());
+					System.out.println(inface.getText());
 					for (int j = 0; j < vc_item.size(); j++) {
 						if (vc_item.get(j) != inface) {
 							vc_item.get(j).removeImage();
@@ -147,7 +156,7 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 	//包的具体描述
 	public void createDes() {
 		desPanel = new JPanel();
-		JTextPane jtp = new JTextPane();
+		jtp = new JTextPane();
 		JScrollPane scrollPane = new JScrollPane(jtp);
 		jtp.setEditable(false);
 		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -161,32 +170,43 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		int count = 1;//计数
-		
+
 		long startTime = System.currentTimeMillis();
 		isRun = true;
 		DefaultTableModel temp_model = currentModel;
-		while(isRun){
+		while (isRun) {
 			cp.beginCatch();
-			//同步，防止竞态条件
-			synchronized (temp_model) {
-				if (cp.vc_patrr.size() != 0 && temp_model == currentModel) {
-					PacketAtrr pa = cp.vc_patrr.removeFirst();
-					long endTime = System.currentTimeMillis();
-					long continueTime = endTime - startTime;
-					String[] rowData = {count + "",continueTime + "",pa.getSourceaddr()
-							,pa.getDestinationAddr(),pa.getProtocol(),pa.getLength() + ""};
-					currentModel.addRow(rowData);
-					table.setModel(currentModel);
-					count++;
+			// 同步，防止竞态条件
+			if (cp.vc_patrr.size() != 0) {
+//				synchronized (this) {
+					if (temp_model == currentModel) {
+						PacketAtrr pa = cp.vc_patrr.removeFirst();
+						vc_packet.add(pa);
+						long endTime = System.currentTimeMillis();
+						long continueTime = endTime - startTime;
+						String[] rowData = { count + "", continueTime + "", pa.getSourceaddr(), pa.getDestinationAddr(),
+								pa.getProtocol(), pa.getLength() + "" };
+						currentModel.addRow(rowData);
+						currentModel.addTableModelListener(new TableModelListener() {
+							
+							@Override
+							public void tableChanged(TableModelEvent e) {
+								// TODO Auto-generated method stub
+								jtp.setText(pa.getDes().toString());
+							}
+						});
+						table.setModel(currentModel);
+						count++;
+					} else {
+						cp.vc_patrr.clear();
+						table.setModel(currentModel);
+						jp.updateUI();
+						temp_model = currentModel;
+						jtp.setText("");
+						count = 1;
+					}
 				}
-				else {
-					cp.vc_patrr.clear();
-					table.setModel(currentModel);
-					temp_model = currentModel;
-					count = 0;
-				}
-			}
+			//}
 		}
 	}
 
@@ -199,10 +219,41 @@ public class mainFrame extends JFrame implements Runnable,ActionListener{
 		}
 		else if (e.getActionCommand().equals("end")) {
 			isRun = false;
+			cp.vc_patrr.clear();
 		}
 		else if (e.getActionCommand().equals("clear")) {
 			DefaultTableModel model = new DefaultTableModel(null, entry);
+			cp.vc_patrr.clear();
+			jtp.setText("");
 			table.setModel(model);
 		}
+	}
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		int row = table.getSelectedRow();
+		//System.out.println(row);
+		jtp.setText(vc_packet.get(row).getDes().toString());
+		jtp.updateUI();
+	}
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 }
